@@ -1,26 +1,43 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
+	"../donut/lib"
 	"../donut/src"
 )
 
 func configureHTTPHandlers() {
-	http.HandleFunc("/", router.Route(func() string {
-		return "Hello, world!"
+	http.HandleFunc("/", lib.Route(func() []byte {
+		return []byte("Hello, world!")
+	}))
+
+	http.HandleFunc("/list", lib.Route(func() []byte {
+		donuts := []src.Donut{
+			src.Donut{
+				Shape: src.Ring,
+			},
+			src.Donut{
+				Shape: src.Hole,
+			},
+		}
+
+		response, err := json.Marshal(donuts)
+		if err != nil {
+			panic(err)
+		}
+
+		return response
 	}))
 }
 
 func main() {
-	// Default port to 3000
-	port, success := os.LookupEnv("APP_PORT")
-	if !success {
-		port = "3000"
-	}
+	port := os.Args[1]
+	fmt.Println("Port:", port)
 	
 	// Serve on localhost
 	address := fmt.Sprintf(":%s", port)
