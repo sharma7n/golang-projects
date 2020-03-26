@@ -6,4 +6,4 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/p
   && rm proto.zip
 
 # Install the Go plugin for the protobuf compiler.
-RUN sudo go get google.golang.org/protobuf && sudo go get google.golang.org/protobuf/cmd/protoc-gen-go
+RUN sudo -E go get google.golang.org/protobuf/cmd/protoc-gen-go
