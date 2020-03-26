@@ -2,6 +2,4 @@ image:
   file: .gitpod.Dockerfile
 
 tasks:
-  - init: go get google.golang.org/protobuf/cmd/protoc-gen-go
-    command: echo "Replace me with something that should run on every start, or just
-      remove me entirely."
+  - init: bash setup.sh
