@@ -1,0 +1,13 @@
+syntax = "proto3";
+package donut;
+
+option go_package = "gen/donut";
+
+enum Shape {
+    RING = 0;
+    HOLE = 1;
+}
+
+message Donut {
+    Shape shape = 1;
+}
