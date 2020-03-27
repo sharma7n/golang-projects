@@ -58,11 +58,10 @@ func main() {
 
 func getDonuts(db *sql.DB) (donuts []donut.Donut, err error) {
 	rows, err := db.Query("SELECT * FROM Donut;")
+	defer rows.Close()
 	if err != nil {
 		return
 	}
-	defer rows.Close()
-
 	
 	for rows.Next() {
 		var shape donut.Shape
@@ -81,7 +80,8 @@ func getDonuts(db *sql.DB) (donuts []donut.Donut, err error) {
 }
 
 func addDonut(db *sql.DB) error {
-	_, err := db.Query("INSERT INTO Donut VALUES (0)")
+	rows, err := db.Query("INSERT INTO Donut VALUES (0)")
+	defer rows.Close()
 	return err
 }
 
