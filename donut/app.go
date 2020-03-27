@@ -9,29 +9,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/runtime/protoimpl"
-	"../donut/gen/donut"
+	"app/gen/donut"
 )
-
-
-
-// Shape ...
-type Shape int
-
-const (
-	// Ring ...
-	Ring Shape = 0
-
-	// Hole ...
-	Hole Shape = 1
-)
-
-// Donut ...
-type Donut struct {
-	Shape Shape
-}
 
 func configureHTTPHandlers(db *sql.DB) {
 	http.HandleFunc("/", route(func() ([]byte, error) {
@@ -68,7 +47,7 @@ func main() {
 	log.Fatal(err)
 }
 
-func getDonuts(db *sql.DB) (donuts []Donut, err error) {
+func getDonuts(db *sql.DB) (donuts []donut.Donut, err error) {
 	rows, err := db.Query("SELECT * FROM Donut;")
 	if err != nil {
 		return
@@ -77,11 +56,11 @@ func getDonuts(db *sql.DB) (donuts []Donut, err error) {
 
 	
 	for rows.Next() {
-		var shape Shape
+		var shape donut.Shape
 		if err = rows.Scan(&shape); err != nil {
 			return
 		}
-		donut := Donut{Shape: shape}
+		donut := donut.Donut{Shape: shape}
 		donuts = append(donuts, donut)
 	}
 	

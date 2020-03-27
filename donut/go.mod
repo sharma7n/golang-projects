@@ -1,8 +1,9 @@
-module workspace/golang-projects/donut
+module app
 
 go 1.14
 
 require (
+	github.com/golang/protobuf v1.4.0-rc.4
 	github.com/lib/pq v1.3.0 // indirect
-	google.golang.org/protobuf v1.20.1 // indirect
+	google.golang.org/protobuf v1.20.1
 )
