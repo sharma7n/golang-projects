@@ -1,44 +1,50 @@
 package main
 
 import (
-	"database/sql"
-	_ "github.com/lib/pq"
-
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+
+	"database/sql"
+	_ "github.com/lib/pq"
+
+	"app/lib/server"
+	"app/gen/donut"
+	"app/src/effect"
+	"app/src/store"
 )
 
-// Shape ...
-type Shape int
+func index() server.Route {
+	return func() *server.Reply {
+		return server.Text("Hello, world!")
+	}
+}
 
-const (
-	// Ring ...
-	Ring Shape = 0
+func listRoute(getDonutList effect.GetDonutList) server.Route {
+	return func() *server.Reply {
+		list, err := getDonutList.GetDonutList()
+		if err != nil {
+			return server.Error(err)
+		}
+		return server.Proto(&list)
+	}
+}
 
-	// Hole ...
-	Hole Shape = 1
-)
-
-// Donut ...
-type Donut struct {
-	Shape Shape
+func addRoute(addDonut effect.AddDonut) server.Route {
+	return func() *server.Reply {
+		err := addDonut.AddDonut(donut.Donut{Shape: donut.Shape_RING})
+		if err != nil {
+			return server.Error(err)
+		}
+		return server.Text("Added ring donut")
+	}
 }
 
 func configureHTTPHandlers(db *sql.DB) {
-	http.HandleFunc("/", route(func() ([]byte, error) {
-		return []byte("Hello, world!"), nil
-	}))
-
-	http.HandleFunc("/list", route(func() ([]byte, error) {
-		donuts, err := getDonuts(db)
-		if err != nil {
-			return nil, err
-		}
-
-		return json.Marshal(donuts)
-	}))
+	store := store.Store{DB: db}
+	http.HandleFunc("/", server.ToHandler(index()))
+	http.HandleFunc("/list", server.ToHandler(listRoute(store)))
+	http.HandleFunc("/add", server.ToHandler(addRoute(store)))
 }
 
 func main() {
@@ -59,41 +65,4 @@ func main() {
 	// Serve the application using the given address
 	err = http.ListenAndServe(address, nil)
 	log.Fatal(err)
-}
-
-func getDonuts(db *sql.DB) (donuts []Donut, err error) {
-	rows, err := db.Query("SELECT * FROM Donut;")
-	if err != nil {
-		return
-	}
-	defer rows.Close()
-
-	
-	for rows.Next() {
-		var shape Shape
-		if err = rows.Scan(&shape); err != nil {
-			return
-		}
-		donut := Donut{Shape: shape}
-		donuts = append(donuts, donut)
-	}
-	
-	if err = rows.Err(); err != nil {
-		return
-	}
-
-	return
-}
-
-func route(logic func() ([]byte, error)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.URL)
-
-		response, err := logic()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		w.Write(response)
-	}
 }
