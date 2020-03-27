@@ -11,3 +11,7 @@ enum Shape {
 message Donut {
     Shape shape = 1;
 }
+
+message DonutList {
+    repeated Donut donuts = 1;
+}

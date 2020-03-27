@@ -1,13 +1,14 @@
 package main
 
 import (
-	"database/sql"
-	_ "github.com/lib/pq"
-
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+
+	"database/sql"
+	_ "github.com/lib/pq"
+
+	"github.com/golang/protobuf/proto"
 
 	"app/gen/donut"
 )
@@ -18,12 +19,12 @@ func configureHTTPHandlers(db *sql.DB) {
 	}))
 
 	http.HandleFunc("/list", route(func() ([]byte, error) {
-		donuts, err := getDonuts(db)
+		list, err := getDonutList(db)
 		if err != nil {
 			return nil, err
 		}
 
-		return json.Marshal(donuts)
+		return proto.Marshal(&list)
 	}))
 
 	http.HandleFunc("/add", route(func() ([]byte, error) {
@@ -56,7 +57,7 @@ func main() {
 	log.Fatal(err)
 }
 
-func getDonuts(db *sql.DB) (donuts []donut.Donut, err error) {
+func getDonutList(db *sql.DB) (list donut.DonutList, err error) {
 	rows, err := db.Query("SELECT * FROM Donut;")
 	defer rows.Close()
 	if err != nil {
@@ -69,7 +70,7 @@ func getDonuts(db *sql.DB) (donuts []donut.Donut, err error) {
 			return
 		}
 		donut := donut.Donut{Shape: shape}
-		donuts = append(donuts, donut)
+		list.Donuts = append(list.Donuts, &donut)
 	}
 	
 	if err = rows.Err(); err != nil {
@@ -80,7 +81,7 @@ func getDonuts(db *sql.DB) (donuts []donut.Donut, err error) {
 }
 
 func addDonut(db *sql.DB) error {
-	rows, err := db.Query("INSERT INTO Donut VALUES (0)")
+	rows, err := db.Query("INSERT INTO Donut VALUES (1)")
 	defer rows.Close()
 	return err
 }
