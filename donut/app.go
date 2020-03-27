@@ -8,6 +8,8 @@ import (
 	"database/sql"
 	_ "github.com/lib/pq"
 
+	"github.com/golang/protobuf/proto"
+
 	"app/lib/server"
 	"app/gen/donut"
 	"app/src/effect"
@@ -15,13 +17,13 @@ import (
 )
 
 func index() server.Route {
-	return func() *server.Reply {
+	return func(in []byte) *server.Reply {
 		return server.Text("Hello, world!")
 	}
 }
 
 func listRoute(getDonutList effect.GetDonutList) server.Route {
-	return func() *server.Reply {
+	return func(in []byte) *server.Reply {
 		list, err := getDonutList.GetDonutList()
 		if err != nil {
 			return server.Error(err)
@@ -31,11 +33,18 @@ func listRoute(getDonutList effect.GetDonutList) server.Route {
 }
 
 func addRoute(addDonut effect.AddDonut) server.Route {
-	return func() *server.Reply {
-		err := addDonut.AddDonut(donut.Donut{Shape: donut.Shape_RING})
+	return func(in []byte) *server.Reply {
+		donut := donut.Donut{}
+		err := proto.Unmarshal(in, &donut)
 		if err != nil {
 			return server.Error(err)
 		}
+
+		err = addDonut.AddDonut(donut)
+		if err != nil {
+			return server.Error(err)
+		}
+
 		return server.Text("Added ring donut")
 	}
 }

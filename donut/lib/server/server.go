@@ -3,19 +3,20 @@ package server
 
 import (
 	"net/http"
+	"io"
 	"log"
 
 	"github.com/golang/protobuf/proto"
 )
-
-// Route represents a server function that may perform some number of side effects and will return a *Reply.
-type Route func() *Reply
 
 // Reply represents the return value of an HTTP route in bytes.
 type Reply struct {
 	Bytes []byte
 	Error error
 }
+
+// Route represents a server function that may perform some number of side effects and will return a *Reply.
+type Route func([]byte) *Reply
 
 // Error constructs a *Reply from a given error.
 func Error(err error) *Reply {
@@ -38,7 +39,16 @@ func ToHandler(logic Route) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.URL)
 
-		reply := logic()
+		body := r.Body
+		defer body.Close()
+		
+		incomingBytes := make([]byte, 1000)
+		_, err := body.Read(incomingBytes)
+		if err != nil && err != io.EOF {
+			log.Fatal(err)
+		}
+
+		reply := logic(incomingBytes)
 		if reply.Error != nil {
 			log.Fatal(reply.Error)
 		}
