@@ -25,6 +25,15 @@ func configureHTTPHandlers(db *sql.DB) {
 
 		return json.Marshal(donuts)
 	}))
+
+	http.HandleFunc("/add", route(func() ([]byte, error) {
+		err := addDonut(db)
+		if err != nil {
+			return nil, err
+		}
+
+		return []byte("Added donut"), nil
+	}))
 }
 
 func main() {
@@ -69,6 +78,11 @@ func getDonuts(db *sql.DB) (donuts []donut.Donut, err error) {
 	}
 
 	return
+}
+
+func addDonut(db *sql.DB) error {
+	_, err := db.Query("INSERT INTO Donut VALUES (0)")
+	return err
 }
 
 func route(logic func() ([]byte, error)) func(http.ResponseWriter, *http.Request) {
