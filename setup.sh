@@ -6,3 +6,6 @@ protoc donut/donut.proto --go_out=donut
 
 # The PGHOSTADDR environment variable is not supported by the Go plugin for postgres.
 unset PGHOSTADDR
+
+# Initialize the database (not idempotent).
+bash donut/init_db.sh
