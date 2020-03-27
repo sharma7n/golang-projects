@@ -8,33 +8,43 @@ import (
 	"database/sql"
 	_ "github.com/lib/pq"
 
-	"github.com/golang/protobuf/proto"
-
+	"app/lib/server"
 	"app/gen/donut"
+	"app/src/effect"
+	"app/src/store"
 )
 
+func index() server.Route {
+	return func() *server.Reply {
+		return server.Text("Hello, world!")
+	}
+}
+
+func listRoute(getDonutList effect.GetDonutList) server.Route {
+	return func() *server.Reply {
+		list, err := getDonutList.GetDonutList()
+		if err != nil {
+			return server.Error(err)
+		}
+		return server.Proto(&list)
+	}
+}
+
+func addRoute(addDonut effect.AddDonut) server.Route {
+	return func() *server.Reply {
+		err := addDonut.AddDonut(donut.Donut{Shape: donut.Shape_RING})
+		if err != nil {
+			return server.Error(err)
+		}
+		return server.Text("Added ring donut")
+	}
+}
+
 func configureHTTPHandlers(db *sql.DB) {
-	http.HandleFunc("/", route(func() ([]byte, error) {
-		return []byte("Hello, world!"), nil
-	}))
-
-	http.HandleFunc("/list", route(func() ([]byte, error) {
-		list, err := getDonutList(db)
-		if err != nil {
-			return nil, err
-		}
-
-		return proto.Marshal(&list)
-	}))
-
-	http.HandleFunc("/add", route(func() ([]byte, error) {
-		err := addDonut(db)
-		if err != nil {
-			return nil, err
-		}
-
-		return []byte("Added donut"), nil
-	}))
+	store := store.Store{DB: db}
+	http.HandleFunc("/", server.ToHandler(index()))
+	http.HandleFunc("/list", server.ToHandler(listRoute(store)))
+	http.HandleFunc("/add", server.ToHandler(addRoute(store)))
 }
 
 func main() {
@@ -55,46 +65,4 @@ func main() {
 	// Serve the application using the given address
 	err = http.ListenAndServe(address, nil)
 	log.Fatal(err)
-}
-
-func getDonutList(db *sql.DB) (list donut.DonutList, err error) {
-	rows, err := db.Query("SELECT * FROM Donut;")
-	defer rows.Close()
-	if err != nil {
-		return
-	}
-	
-	for rows.Next() {
-		var shape donut.Shape
-		if err = rows.Scan(&shape); err != nil {
-			return
-		}
-		donut := donut.Donut{Shape: shape}
-		list.Donuts = append(list.Donuts, &donut)
-	}
-	
-	if err = rows.Err(); err != nil {
-		return
-	}
-
-	return
-}
-
-func addDonut(db *sql.DB) error {
-	rows, err := db.Query("INSERT INTO Donut VALUES (1)")
-	defer rows.Close()
-	return err
-}
-
-func route(logic func() ([]byte, error)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.URL)
-
-		response, err := logic()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		w.Write(response)
-	}
 }
